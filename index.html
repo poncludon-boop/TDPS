@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>SILLAGE — Tower Defense WEGO</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="hud">
+    <h1>SILLAGE</h1>
+    <p class="sub">Tower defense WEGO — planifiez, puis résolution simultanée</p>
+    <div id="phase-label" class="phase planif">PLANIFICATION</div>
+    <div class="stats">
+      <div class="stat"><span class="k">Tour</span><span class="v" id="hud-turn">1/10</span></div>
+      <div class="stat"><span class="k">Énergie</span><span class="v" id="hud-energy">90</span></div>
+      <div class="stat"><span class="k">Noyau</span><span class="v" id="hud-core">20 PV</span></div>
+      <div class="stat"><span class="k">Ennemis</span><span class="v" id="hud-enemies">0</span></div>
+    </div>
+    <div id="hint">Clique une unité : le cercle = sa réserve de déplacement. Tire-la : le sillage se trace et le cercle rétrécit jusqu'à épuisement.</div>
+    <div class="recruit">
+      <button id="btn-canon">Recruter Canon (30)</button>
+      <button id="btn-lance">Recruter Lance (60)</button>
+      <button id="btn-reset" title="Annule les déplacements planifiés ce tour">Réinitialiser unités</button>
+    </div>
+    <button id="btn-resolve" class="resolve">⚔ RÉSOLUTION</button>
+    <div id="timer"></div>
+    <div id="log"></div>
+  </aside>
+  <main>
+    <canvas id="game" width="768" height="528"></canvas>
+  </main>
+</div>
+
+<div id="overlay">
+  <div class="panel">
+    <h2>SILLAGE</h2>
+    <p>Chaque tour se joue en deux temps :</p>
+    <ol>
+      <li><b>PLANIFICATION</b> — tu déplaces tes unités avec la mécanique de <b>sillage</b> : sélectionne une unité, un cercle virtuel apparaît (sa capacité de déplacement). Tire-la : un tracé s'effectue et le cercle rétrécit jusqu'à épuisement. Tu peux aussi cibler un ennemi (clique sur lui) pour qu'une unité le priorise.</li>
+      <li><b>RÉSOLUTION</b> — ton plan et les mouvements ennemis (IA) s'exécutent <b>simultanément</b>. Les tours tirent, les ennemis filent vers le noyau.</li>
+    </ol>
+    <p>Objectif : protéger le noyau en survisant à <b>10 vagues</b>.</p>
+    <button id="btn-start">COMMENCER</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
