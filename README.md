@@ -1,32 +1,29 @@
-# SILLAGE 3D — Tower Defense WEGO
+# SILLAGE — Tower Defense WEGO
 
-Prototype jouable en 3D (Three.js, aucun build local — le CDN jsDelivr est le seul appel externe).
+Prototype jouable (HTML/CSS/JS vanilla, aucun build, aucune dépendance).
 
 ## Lancer
 
-Ouvrir `index.html` dans un navigateur (connexion à Internet requise pour Three.js), ou via GitHub Pages : `https://poncludon-boop.github.io/TDPS/`.
+Ouvrir `index.html` dans un navigateur.
 
 ## Règles
 
-- Terrain plat : **base au sud**, ennemis déferlant du **nord, sur toute la largeur**.
-- Chaque tour : **planification** puis **résolution simultanée** (7 s) des deux camps (WEGO). 10 vagues à surviser, noyau à 20 PV.
+- **Tour par tour WEGO** : chaque tour a deux temps.
+  1. **Planification** — le joueur déplace ses unités et attribue des cibles ; l'IA ennemie planifie sa course vers le noyau en même temps.
+  2. **Résolution simultanée** — les deux camps s'exécutent en même temps pendant ~7 s : les ennemis filent vers le noyau en évitant les tourelles, les tourelles tirent en temps réel.
+- **Déplacement sillage** : cliquer une unité fait apparaître un **cercle virtuel** = sa capacité de déplacement du tour. En la tirant, un **tracé (sillage)** s'effectue et le cercle **rétrécit à mesure** ; à épuisement (rayon 0), plus aucun déplacement. Le bouton « Réinitialiser unités » restaure les réserves de déplacement de toutes les tourelles depuis leur position actuelle.
+- **Ciblage** : unité sélectionnée + clic sur un ennemi = cible prioritaire (re-cliquer annule).
+- **Recrutement** : boutons Canon (30) / Lance (60), déploiement au clic sur une case libre.
 
-### Mécanique sillage (corrigée)
+## Contenu
 
-Sélectionner une tourelle (clic gauche) puis la traîner : un **tracé sillage** se dessine derrière elle pendant qu'un **cercle virtuel, centré sur le pointeur, rétrécit en temps réel** à mesure que la distance est consommée ; il disparaît à épuisement de la réserve (`capacité − utilisé`). Clic droit : viser (laser = axe, mortier = point d'impact). Clic droit + glisser : orbite caméra, molette : zoom.
-
-### Arsenal
-
-| Tourelle | Portée | Dépl./tour | Cadence | Dégâts |
-|---|---|---|---|---|
-| **Gatling** | 50 | 50 | rafales 25/tour | −1 PV · trait 3 px, meurt sur impact ou au bord du terrain |
-| **Laser** | 100 | 25 | 1/tour | −50 PV · trait 7 px sur toute la longueur, rétrécit à 1 px en 3 s, touche tout ennemi sur son passage |
-| **Mortier** | ∞ | 10 | 2/tour | −25 PV · explosion ⌀ 21 |
-
-Ennemis : Rôdeur (35 PV, rapide), Muon (20 PV, très rapide), Colosse (90 PV, lent, blindé).
+- `canon` : court rayon, tir rapide, très mobile (90 px/tour).
+- `lance` : long rayon, gros dégâts, peu mobile (60 px/tour).
+- Ennemis : Rôdeur, Muon (rapide), Colosse (tank). Vagues croissantes sur 10 tours.
+- Perdu si le noyau atteint 0 PV ; gagné en survisant aux 10 vagues.
 
 ## Fichiers
 
-- `index.html` — structure, HUD, overlay de règles
-- `style.css` — thème sombre, HUD en surimpression
-- `game.js` — moteur Three.js : scène 3D, sillage, phases WEGO, IA ennemie, tirs, caméra orbitale
+- `index.html` — structure + HUD + overlay de règles
+- `style.css` — thème sombre
+- `game.js` — toute la logique (phases, sillage, résolution simultanée, IA ennemie, rendu canvas)
