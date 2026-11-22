@@ -2,49 +2,52 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>SILLAGE — Tower Defense WEGO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SILLAGE 3D — Tower Defense WEGO</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
-  <aside id="hud">
-    <h1>SILLAGE</h1>
-    <p class="sub">Tower defense WEGO — planifiez, puis résolution simultanée</p>
-    <div id="phase-label" class="phase planif">PLANIFICATION</div>
-    <div class="stats">
-      <div class="stat"><span class="k">Tour</span><span class="v" id="hud-turn">1/10</span></div>
-      <div class="stat"><span class="k">Énergie</span><span class="v" id="hud-energy">90</span></div>
-      <div class="stat"><span class="k">Noyau</span><span class="v" id="hud-core">20 PV</span></div>
-      <div class="stat"><span class="k">Ennemis</span><span class="v" id="hud-enemies">0</span></div>
-    </div>
-    <div id="hint">Clique une unité : le cercle = sa réserve de déplacement. Tire-la : le sillage se trace et le cercle rétrécit jusqu'à épuisement.</div>
-    <div class="recruit">
-      <button id="btn-canon">Recruter Canon (30)</button>
-      <button id="btn-lance">Recruter Lance (60)</button>
-      <button id="btn-reset" title="Annule les déplacements planifiés ce tour">Réinitialiser unités</button>
-    </div>
-    <button id="btn-resolve" class="resolve">⚔ RÉSOLUTION</button>
-    <div id="timer"></div>
-    <div id="log"></div>
-  </aside>
-  <main>
-    <canvas id="game" width="768" height="528"></canvas>
-  </main>
-</div>
+<canvas id="scene"></canvas>
+
+<aside id="hud">
+  <h1>SILLAGE <span>3D</span></h1>
+  <p class="sub">Tower defense WEGO — planification, puis résolution simultanée</p>
+  <div id="phase-label" class="phase planif">PLANIFICATION</div>
+  <div class="stats">
+    <div class="stat"><span class="k">Tour</span><span class="v" id="hud-turn">1/10</span></div>
+    <div class="stat"><span class="k">Noyau</span><span class="v" id="hud-core">20 PV</span></div>
+    <div class="stat"><span class="k">Ennemis</span><span class="v" id="hud-enemies">0</span></div>
+    <div class="stat"><span class="k">Sillage</span><span class="v" id="hud-sillage">—</span></div>
+  </div>
+  <div id="hint">
+    <b>Gauche</b> : sélectionner / traîner une tourelle (le cercle rétrécit sur le pointeur).<br>
+    <b>Clic droit</b> : viser (laser, mortier) — <b>glisser à droite</b> : orbiter, <b>molette</b> : zoom.
+  </div>
+  <div id="arsenal"></div>
+  <button id="btn-reset">Réinitialiser unités</button>
+  <button id="btn-resolve" class="resolve">⚔ RÉSOLUTION</button>
+  <div id="timer"></div>
+  <div id="log"></div>
+</aside>
 
 <div id="overlay">
   <div class="panel">
-    <h2>SILLAGE</h2>
-    <p>Chaque tour se joue en deux temps :</p>
-    <ol>
-      <li><b>PLANIFICATION</b> — tu déplaces tes unités avec la mécanique de <b>sillage</b> : sélectionne une unité, un cercle virtuel apparaît (sa capacité de déplacement). Tire-la : un tracé s'effectue et le cercle rétrécit jusqu'à épuisement. Tu peux aussi cibler un ennemi (clique sur lui) pour qu'une unité le priorise.</li>
-      <li><b>RÉSOLUTION</b> — ton plan et les mouvements ennemis (IA) s'exécutent <b>simultanément</b>. Les tours tirent, les ennemis filent vers le noyau.</li>
-    </ol>
-    <p>Objectif : protéger le noyau en survisant à <b>10 vagues</b>.</p>
+    <h2>SILLAGE 3D</h2>
+    <p>La base est au <b>sud</b>. Les vagues déferlent du <b>nord, sur toute la largeur</b> du terrain.</p>
+    <p><b>Planification</b> : sélectionne une tourelle (clic gauche) et traîne-la — un <b>tracé sillage</b> se dessine pendant que le <b>cercle virtuel se rétrécit sur le pointeur</b>, jusqu'à épuisement de la réserve de déplacement du tour.</p>
+    <p><b>Visée</b> (clic droit) : le laser définit son axe, le mortier son point d'impact. Le gatling cible tout seul.</p>
+    <p><b>Résolution simultanée</b> : ton plan et la ruée ennemie s'exécutent en même temps pendant 7 s.</p>
+    <div class="specs">
+      <div><b style="color:#89b4fa">GATLING</b> — portée 50 · dépl. 50 · trait 3 px, rafales 25/tour, −1 PV, disparaît sur impact ou au bord du terrain</div>
+      <div><b style="color:#cba6f7">LASER</b> — portée 100 · dépl. 25 · très lent 1/tour · trait de 7 px sur toute la longueur, rétrécit à 1 px en 3 s puis disparaît · −50 PV à tout ennemi sur son passage</div>
+      <div><b style="color:#f9e2af">MORTIER</b> — dépl. 10 · 2 tirs/tour · portée illimitée · explosion ⌀ 21 (−25 PV)</div>
+    </div>
+    <p>Protège le noyau sur <b>10 vagues</b>.</p>
     <button id="btn-start">COMMENCER</button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
