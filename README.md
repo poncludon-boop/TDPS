@@ -13,7 +13,9 @@ Ouvrir `index.html` dans un navigateur (connexion à Internet requise pour Three
 
 ### Mécanique sillage (corrigée)
 
-Sélectionner une tourelle (clic gauche) puis la traîner : un **tracé sillage** se dessine derrière elle pendant qu'un **cercle virtuel, centré sur le pointeur, rétrécit en temps réel** à mesure que la distance est consommée ; il disparaît à épuisement de la réserve (`capacité − utilisé`). Clic droit : viser (laser = axe, mortier = point d'impact). Clic droit + glisser : orbite caméra, molette : zoom.
+Sélectionner une tourelle (clic gauche) puis la traîner : un **tracé sillage** se dessine derrière elle pendant qu'un **cercle virtuel suit le pointeur en se rétractant en temps réel** à mesure que la distance est consommée ; il disparaît à épuisement de la réserve (`capacité − utilisé`).
+
+**Visée automatique** : chaque tourelle tire d'elle-même dès qu'un ennemi est à portée, les tirs partant de ses canons (les canons démarrent orientés nord). Une visée manuelle au **clic droit** (laser = axe, mortier = point d'impact) la remplace pendant le tour. Clic droit + glisser : orbite caméra, molette : zoom. Base collée au bord sud.
 
 ### Arsenal
 

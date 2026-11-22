@@ -8,7 +8,7 @@
   const W = 300, D = 200;                    // terrain : largeur x, profondeur z
   const TURN_DURATION = 7.0;
   const MAX_TURNS = 10;
-  const BASE = { x: 0, z: 66, r: 9, hpMax: 20 };
+  const BASE = { x: 0, z: 90, r: 9, hpMax: 20 };
 
   const WEAPONS = {
     gatling: { nom: "Gatling", couleur: 0x89b4fa, hex: "#89b4fa", portee: 50, capacite: 50,
@@ -160,8 +160,8 @@
     if (type === "gatling") {
       for (let i = 0; i < 3; i++) {
         const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 4.5, 8), matiere(spec.couleur, 0.4));
-        tube.rotation.x = Math.PI / 2 - (type === "gatling" ? 0.35 : 0);
-        tube.position.set(i - 1, 1.6 + (i === 1 ? 0.35 : 0), 2.2);
+        tube.rotation.x = -(Math.PI / 2 - 0.35);
+        tube.position.set(i - 1, 1.6 + (i === 1 ? 0.35 : 0), -2.2);
         tete.add(tube);
       }
     }
@@ -211,16 +211,16 @@
       positions, couleurs, trailPts: [],
       x, z, capacite: spec.capacite, utilise: 0,
       portee: spec.portee, degats: spec.degats, tirsParTour: spec.tirs,
-      angle: Math.PI, aim: { x, z: z - 100 },
+      angle: Math.PI, aim: { x, z: z - 100 }, manuel: false,
       chargement: 0, tirsEffectues: 0, baseY: 0,
     };
   }
 
   function engendrerPartie() {
     state.tours = [
-      construireTourelle("gatling", -16, 46),
-      construireTourelle("laser", 16, 46),
-      construireTourelle("mortier", 0, 56),
+      construireTourelle("gatling", -16, 68),
+      construireTourelle("laser", 16, 68),
+      construireTourelle("mortier", 0, 76),
     ];
    majArsenal();
   }
@@ -280,6 +280,7 @@
     for (const t of state.tours) {
       t.utilise = 0;
       t.tirsEffectues = 0;
+      t.manuel = false;
       t.trailPts = [{ x: t.x, z: t.z }];
       majTrace(t);
       majCercle(t);
@@ -403,12 +404,19 @@
       const temps = state.resolutionT;
       t.tete.rotation.y = t.angle;
 
+      // visée automatique : l'ennemi le plus avancé vers la base
+      const vifs = state.ennemis.filter((e) => e.vivant);
+      let autoCible = null;
+      if (vifs.length) {
+        autoCible = vifs.reduce((m, e) =>
+          Math.hypot(e.x - BASE.x, e.z - BASE.z) < Math.hypot(m.x - BASE.x, m.z - BASE.z) ? e : m);
+      }
+
       if (t.type === "gatling" && t.tirsEffectues < t.tirsParTour) {
         t.chargement -= dt;
         if (t.chargement <= 0) {
           let cible = null, minD = t.portee;
-          for (const e of state.ennemis) {
-            if (!e.vivant) continue;
+          for (const e of vifs) {
             const d = Math.hypot(e.x - t.x, e.z - t.z);
             if (d <= minD) { minD = d; cible = e; }
           }
@@ -416,10 +424,11 @@
             t.chargement = TURN_DURATION / t.tirsParTour;
             t.tirsEffectues++;
             t.angle = Math.atan2(cible.x - t.x, cible.z - t.z);
-            const dirLen = Math.hypot(cible.x - t.x, cible.z - t.z) || 1;
+            const b = boucheTourelle(t, 0, -4.3);
+            const dirLen = Math.hypot(cible.x - b.x, cible.z - b.z) || 1;
             state.projectiles.push({
-              x: t.x, z: t.z,
-              dx: (cible.x - t.x) / dirLen, dz: (cible.z - t.z) / dirLen,
+              x: b.x, z: b.z,
+              dx: (cible.x - b.x) / dirLen, dz: (cible.z - b.z) / dirLen,
               vitesse: 110, degats: t.degats, couleur: spec.couleur,
               mesh: null,
             });
@@ -427,13 +436,32 @@
         }
       }
       if (t.type === "laser" && t.tirsEffectues < t.tirsParTour && temps >= 0.6) {
-        t.tirsEffectues++;
-        tirerLaser(t);
+        if (!t.manuel && autoCible &&
+            Math.hypot(autoCible.x - t.x, autoCible.z - t.z) <= t.portee) {
+          t.aim = { x: autoCible.x, z: autoCible.z };
+        }
+        if (t.manuel || (autoCible &&
+            Math.hypot(t.aim.x - t.x, t.aim.z - t.z) <= t.portee + 0.1)) {
+          t.tirsEffectues++;
+          tirerLaser(t);
+        }
       }
       if (t.type === "mortier" && t.tirsEffectues < t.tirsParTour &&
           temps >= (t.tirsEffectues === 0 ? 0.35 : 3.9)) {
-        t.tirsEffectues++;
-        tirerMortier(t);
+        if (!t.manuel && autoCible) {
+          // anticipation de la course de la cible pendant le vol de l'obus
+          const e = autoCible;
+          const dT = Math.hypot(BASE.x - e.x, BASE.z - e.z) || 1;
+          const vol = 1.1;
+          t.aim = {
+            x: Math.max(-W / 2 + 6, Math.min(W / 2 - 6, e.x + ((BASE.x - e.x) / dT) * ENEMIES[e.type].vitesse * vol)),
+            z: Math.max(-D / 2 + 6, Math.min(D / 2 - 6, e.z + ((BASE.z - e.z) / dT) * ENEMIES[e.type].vitesse * vol)),
+          };
+        }
+        if (t.manuel || autoCible) {
+          t.tirsEffectues++;
+          tirerMortier(t);
+        }
       }
     }
 
@@ -493,7 +521,7 @@
       const k = 1 - o.vie / o.duree;
       const x = o.x0 + (o.x1 - o.x0) * k;
       const z = o.z0 + (o.z1 - o.z0) * k;
-      const y = 3 + 26 * 4 * k * (1 - k);
+      const y = 4.2 + 25 * 4 * k * (1 - k);
       o.mesh.position.set(x, y, z);
       if (o.vie <= 0) {
         scene.remove(o.mesh);
@@ -506,6 +534,12 @@
     majHud();
   }
 
+  function boucheTourelle(t, lx, lz) {
+    const th = t.tete.rotation.y;
+    const c = Math.cos(th), s = Math.sin(th);
+    return { x: t.x + lx * c + lz * s, z: t.z - lx * s + lz * c };
+  }
+
   function tirerLaser(t) {
     const dx = t.aim.x - t.x, dz = t.aim.z - t.z;
     const norm = Math.hypot(dx, dz) || 1;
@@ -514,7 +548,7 @@
       new THREE.BoxGeometry(1, 0.9, (W + D)),
       new THREE.MeshBasicMaterial({ color: 0xcba6f7, transparent: true, opacity: 0.9 })
     );
-    maille.position.set(t.x, 2.4, t.z);
+    maille.position.set(t.x, 3.2, t.z);
     maille.rotation.y = Math.atan2(dirX, dirZ);
     scene.add(maille);
     state.rayons.push({
@@ -526,11 +560,12 @@
   }
 
   function tirerMortier(t) {
+    const b = boucheTourelle(t, 0, -1.6);
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 10), matiere(0xf9e2af, 0.8));
-    mesh.position.set(t.x, 3, t.z);
+    mesh.position.set(b.x, 4.3, b.z);
     scene.add(mesh);
     state.obus.push({
-      mesh, x0: t.x, z0: t.z, x1: t.aim.x, z1: t.aim.z,
+      mesh, x0: b.x, z0: b.z, x1: t.aim.x, z1: t.aim.z,
       duree: 1.1, vie: 1.1, degats: t.degats,
     });
     t.angle = Math.atan2(t.aim.x - t.x, t.aim.z - t.z);
@@ -588,7 +623,8 @@
         if (t.type !== "gatling") {
           const c = clampTerrain(p.clone());
           t.aim = { x: c.x, z: c.z };
-          journal(WEAPONS[t.type].nom + " : visée définie (" + Math.round(c.x) + ", " + Math.round(c.z) + ").");
+          t.manuel = true;
+          journal(WEAPONS[t.type].nom + " : visée manuelle (" + Math.round(c.x) + ", " + Math.round(c.z) + ").");
         }
       }
       demarrerOrbite(e);
@@ -634,26 +670,27 @@
 
     if (state.drag && state.phase === "planif") {
       if (!p) return;
+      const brut = { x: p.x, z: p.z };
       const t = state.drag.t;
-      const reste = t.capacite - t.utilise - state.drag.deplace;
+      const reste = Math.max(0, t.capacite - t.utilise - state.drag.deplace);
       let dx = p.x - t.x, dz = p.z - t.z;
       const d = Math.hypot(dx, dz);
-      const consommable = Math.max(0, reste - state.drag.deplace);
-      if (d > consommable && d > 0.001) {
-        const k = consommable / d;
+      if (d > reste && d > 0.001) {
+        const k = reste / d;
         dx *= k; dz *= k;
         p.x = t.x + dx; p.z = t.z + dz;
       }
-      const reel = Math.min(d, consommable);
+      const reel = Math.min(d, reste);
       state.drag.deplace += reel;
       t.x = clampTerrain(p).x;
       t.z = clampTerrain(p).z;
       t.trailPts.push({ x: t.x, z: t.z });
       if (t.trailPts.length > 380) t.trailPts.shift();
       majTrace(t);
-      // le cercle virtuel rétrécit en temps réel, centré sur le pointeur
+      // le cercle virtuel rétrécit en temps réel ET suit le pointage souris
       t.cercle.visible = reste > 0.8;
       t.cercle.scale.setScalar(Math.max(0.001, reste));
+      t.cercle.position.set(brut.x - t.x, 0.14, brut.z - t.z);
     }
     majSillageHud();
   });
@@ -662,6 +699,7 @@
     if (state.drag) {
       const t = state.drag.t;
       t.utilise = Math.min(t.capacite, t.utilise + state.drag.deplace);
+      t.cercle.position.set(0, 0.14, 0);
       majCercle(t);
       journal(WEAPONS[t.type].nom + " : sillage tracé (" +
         Math.round(state.drag.deplace) + " px, reste " +
